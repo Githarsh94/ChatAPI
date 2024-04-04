@@ -2,7 +2,9 @@ const express = require('express');
 const PORT = 3000;
 const CORS = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+
 require('dotenv').config();
+
 const uri = process.env.MongoURL;
 const client = new MongoClient(uri, {
     serverApi: {
@@ -37,9 +39,10 @@ app.post('/SendMessages', async (req, res) => {
 
 app.post('/CheckMessages', async (req, res) => {
     const data = await req.body;
-    const SUID = data.SUID;
+    const UID = data.SUID;
+    const isSender = data.isSender;
     try {
-        const result = await Check('XP7', SUID);
+        const result = await Check('XP7', UID, isSender);
         res.send(result);
     } catch (error) {
         console.log("Error ocurred while checking messages.");
@@ -68,7 +71,7 @@ async function send(DBName, CollectionName, data) {
     return result;
 }
 
-async function Check(DBName, CollectionName) {
+async function Check(DBName, CollectionName, isSender) {
     var result;
     try {
         await client.connect();
@@ -79,7 +82,7 @@ async function Check(DBName, CollectionName) {
         const collection = database.collection(CollectionName);
 
         result = await collection.find({ Delivered: false }).toArray();
-        await collection.updateMany({ Delivered: false }, { $set: { Delivered: true } });
+        if (isSender) await collection.updateMany({ Delivered: false }, { $set: { Delivered: true } });
         if (result) {
             console.log(`Number of new messages found: ${result.length}`);
         }
