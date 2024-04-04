@@ -14,6 +14,9 @@ const client = new MongoClient(uri, {
     }
 });
 
+client.connect();
+client.db("admin").command({ ping: 1 });
+console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
 const app = express();
 
@@ -51,48 +54,37 @@ app.post('/CheckMessages', async (req, res) => {
 
 async function send(DBName, CollectionName, data) {
     var result;
-    try {
-        await client.connect();
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    const database = client.db(DBName);
+    const collection = database.collection(CollectionName);
 
-        const database = client.db(DBName);
-        const collection = database.collection(CollectionName);
-
-        result = await collection.insertOne(data);
-        if (result) {
-            console.log(`Message sent with _id: ${result.insertedId}`);
-        } else {
-            console.log("Message not sent.");
-        }
-    } finally {
-        await client.close();
+    result = await collection.insertOne(data);
+    if (result) {
+        console.log(`Message sent with _id: ${result.insertedId}`);
+    } else {
+        console.log("Message not sent.");
     }
     return result;
 }
 
 async function Check(DBName, CollectionName, isReciever) {
     var result;
-    try {
-        await client.connect();
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
-        const database = client.db(DBName);
-        const collection = database.collection(CollectionName);
+    const database = client.db(DBName);
+    const collection = database.collection(CollectionName);
 
-        result = await collection.find({ Delivered: false }).toArray();
-        if (isReciever) await collection.updateMany({ Delivered: false }, { $set: { Delivered: true } });
-        if (result) {
-            console.log(`Number of new messages found: ${result.length}`);
-        }
-    } finally {
-        await client.close();
+    result = await collection.find({ Delivered: false }).toArray();
+    if (isReciever) await collection.updateMany({ Delivered: false }, { $set: { Delivered: true } });
+    if (result) {
+        console.log(`Number of new messages found: ${result.length}`);
     }
     if (result.length > 0) return { messages: result, found: true };
     return { messages: result, found: false };
 }
 
 app.listen(PORT, (err) => {
+    if (err) {
+        console.log(err);
+        client.close();
+    }
     console.log(`Server is running on port ${PORT}`);
 });
