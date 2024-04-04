@@ -89,7 +89,8 @@ async function Check(DBName, CollectionName, isSender) {
     } finally {
         await client.close();
     }
-    return { messages: result };
+    if (result.length > 0) return { messages: result, found: true };
+    return { messages: result, found: false };
 }
 
 app.listen(PORT, (err) => {
