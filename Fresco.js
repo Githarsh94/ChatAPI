@@ -40,9 +40,9 @@ app.post('/SendMessages', async (req, res) => {
 app.post('/CheckMessages', async (req, res) => {
     const data = await req.body;
     const UID = data.SUID;
-    const isSender = data.isSender;
+    const isReciever = data.isReciever;
     try {
-        const result = await Check('XP7', UID, isSender);
+        const result = await Check('XP7', UID, isReciever);
         res.send(result);
     } catch (error) {
         console.log("Error ocurred while checking messages.");
@@ -71,7 +71,7 @@ async function send(DBName, CollectionName, data) {
     return result;
 }
 
-async function Check(DBName, CollectionName, isSender) {
+async function Check(DBName, CollectionName, isReciever) {
     var result;
     try {
         await client.connect();
@@ -82,7 +82,7 @@ async function Check(DBName, CollectionName, isSender) {
         const collection = database.collection(CollectionName);
 
         result = await collection.find({ Delivered: false }).toArray();
-        if (isSender) await collection.updateMany({ Delivered: false }, { $set: { Delivered: true } });
+        if (isReciever) await collection.updateMany({ Delivered: false }, { $set: { Delivered: true } });
         if (result) {
             console.log(`Number of new messages found: ${result.length}`);
         }
